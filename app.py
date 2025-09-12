@@ -8,8 +8,7 @@ from datetime import datetime
 st.set_page_config(
     page_title="💰 Precious Metals Processor",
     page_icon="💰",
-    layout="wide",
-    initial_sidebar_state="expanded"
+    layout="wide"
 )
 
 # Custom CSS for styling
@@ -159,16 +158,25 @@ def process_precious_metals_data(reference_file, upload_file, gold_price, silver
         # Filter and clean data
         today = pd.Timestamp.today().normalize()
         reference = reference[reference["Max Date"] <= today].reset_index(drop=True)
-        reference["Stock ID"] = reference["Stock ID"].str.replace(" ", "", regex=False)
-        reference["Metal"] = reference["Metal"].str.replace(" ", "", regex=False)
+        
+        # Clean Stock ID and Metal columns - handle NaN values
+        reference["Stock ID"] = reference["Stock ID"].fillna("").astype(str).str.replace(" ", "", regex=False)
+        reference["Metal"] = reference["Metal"].fillna("").astype(str).str.replace(" ", "", regex=False)
         reference["Metal"] = reference["Metal"].str.replace("SS", "S/S", regex=False)
         reference = reference.drop_duplicates(subset=["Stock ID"]).reset_index(drop=True)
         
-        # Clean Gold Market column
-        reference["Gold Market"] = reference["Gold Market"].str.replace(",", "", regex=False)
-        reference["Gold Market"] = reference["Gold Market"].str.replace("-", "", regex=False)
-        reference["Gold Market"] = reference["Gold Market"].str.replace(" ", "", regex=False)
-        reference["Gold Market"] = pd.to_numeric(reference["Gold Market"], errors="coerce")
+        # Clean Gold Market column - more robust handling
+        if "Gold Market" in reference.columns:
+            reference["Gold Market"] = reference["Gold Market"].fillna("")
+            reference["Gold Market"] = reference["Gold Market"].astype(str).str.replace(",", "", regex=False)
+            reference["Gold Market"] = reference["Gold Market"].str.replace("-", "", regex=False)
+            reference["Gold Market"] = reference["Gold Market"].str.replace(" ", "", regex=False)
+            reference["Gold Market"] = pd.to_numeric(reference["Gold Market"], errors="coerce")
+        
+        # Ensure Price Per Unit is numeric
+        if "Price Per Unit" in reference.columns:
+            reference["Price Per Unit"] = pd.to_numeric(reference["Price Per Unit"], errors="coerce")
+            reference["Price Per Unit"] = reference["Price Per Unit"].fillna(0)
         
         # Generate multiplier tables using current market prices
         gold_factor = gold_table(gold_price)
@@ -177,14 +185,26 @@ def process_precious_metals_data(reference_file, upload_file, gold_price, silver
         # Lookup and assign multipliers
         reference = lookup_multiplier(reference, gold_factor, silver_factor)
         
-        # Create new price column
+        # Create new price column - ensure both columns are numeric
+        reference['Multiplier'] = pd.to_numeric(reference['Multiplier'], errors='coerce').fillna(1.0)
         reference['New Price'] = reference['Price Per Unit'] * reference['Multiplier']
         reference['New Price'] = reference['New Price'].round(2)
+        
+        # Ensure Variant Price column exists and is numeric in upload file
+        if "Variant Price" not in upload.columns:
+            upload["Variant Price"] = 0.0
+        else:
+            upload["Variant Price"] = pd.to_numeric(upload["Variant Price"], errors="coerce")
+        
+        # Ensure Variant SKU column exists
+        if "Variant SKU" not in upload.columns:
+            upload["Variant SKU"] = ""
         
         # Update variant prices in upload data
         upload_updated, successful_updates, skipped_blank_sku, skipped_no_match = update_variant_price_fixed(upload, reference)
         
         # Round variant prices to 2 decimal places
+        upload_updated['Variant Price'] = pd.to_numeric(upload_updated['Variant Price'], errors='coerce')
         upload_updated['Variant Price'] = upload_updated['Variant Price'].round(2)
         
         return upload_updated, {
@@ -197,6 +217,9 @@ def process_precious_metals_data(reference_file, upload_file, gold_price, silver
         
     except Exception as e:
         st.error(f"Processing error: {str(e)}")
+        st.error("Please check that your CSV files have the required columns:")
+        st.error("- Reference file: Stock ID, Metal, Price Per Unit, Gold Market")
+        st.error("- Product file: Variant SKU, Variant Price")
         return None, None
 
 # Main App
