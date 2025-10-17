@@ -207,6 +207,10 @@ def process_precious_metals_data(reference_file, upload_file, gold_price, silver
         upload_updated['Variant Price'] = pd.to_numeric(upload_updated['Variant Price'], errors='coerce')
         upload_updated['Variant Price'] = upload_updated['Variant Price'].round(2)
         
+        # Remove special characters from all string columns in final output
+        for col in upload_updated.select_dtypes(include=['object']).columns:
+            upload_updated[col] = upload_updated[col].astype(str).str.replace('[‚ƒÃÂ]', '', regex=True)
+        
         return upload_updated, {
             'successful_updates': successful_updates,
             'skipped_blank_sku': skipped_blank_sku,
@@ -359,6 +363,7 @@ with st.sidebar:
     - Matches products by SKU/Stock ID
     - Updates prices using metal type (Gold/Silver) multipliers
     - Rounds all prices to 2 decimal places
+    - Removes special encoding characters from final output
     """)
     
     st.header("💡 Tips")
