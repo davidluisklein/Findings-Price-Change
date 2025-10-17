@@ -45,8 +45,8 @@ def gold_table(gold_market: float) -> pd.DataFrame:
 
 def silver_table(silver_market: float) -> pd.DataFrame:
     """Generate silver multiplier table"""
-    multipliers_s = [1.5573, 1.4615, 1.3571, 1.3073, 1.2025, 1.1176, 1.0555, 1]
-    factors_s = [1.6, 1.5, 1.4, 1.3, 1.2, 1.1, 1.05, 1]
+    multipliers_s = [2.2, 1.5573, 1.4615, 1.3571, 1.3073, 1.2025, 1.1176, 1.0555, 1]
+    factors_s = [2, 1.6, 1.5, 1.4, 1.3, 1.2, 1.1, 1.05, 1]
     results_s = [silver_market / m for m in multipliers_s]
     return pd.DataFrame({"Gold Market": results_s, "Multiplier": factors_s})
 
