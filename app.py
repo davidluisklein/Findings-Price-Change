@@ -208,8 +208,20 @@ def process_precious_metals_data(reference_file, upload_file, gold_price, silver
         upload_updated['Variant Price'] = upload_updated['Variant Price'].round(2)
         
         # Remove special characters from all string columns in final output
-        for col in upload_updated.select_dtypes(include=['object']).columns:
-            upload_updated[col] = upload_updated[col].astype(str).str.replace('[‚ƒÃÂ]', '', regex=True)
+        # Special focus on Body (HTML) column
+        for col in upload_updated.columns:
+            if upload_updated[col].dtype == 'object':
+                upload_updated[col] = upload_updated[col].apply(
+                    lambda x: str(x).replace('‚', '').replace('ƒ', '').replace('Ã', '').replace('Â', '').replace('Ã‚', '') if pd.notna(x) else x
+                )
+        
+        # Additional cleaning specifically for Body (HTML) column if it exists
+        if 'Body (HTML)' in upload_updated.columns:
+            upload_updated['Body (HTML)'] = upload_updated['Body (HTML)'].str.replace('‚', '', regex=False)
+            upload_updated['Body (HTML)'] = upload_updated['Body (HTML)'].str.replace('ƒ', '', regex=False)
+            upload_updated['Body (HTML)'] = upload_updated['Body (HTML)'].str.replace('Ã', '', regex=False)
+            upload_updated['Body (HTML)'] = upload_updated['Body (HTML)'].str.replace('Â', '', regex=False)
+            upload_updated['Body (HTML)'] = upload_updated['Body (HTML)'].str.replace('Ã‚', '', regex=False)
         
         return upload_updated, {
             'successful_updates': successful_updates,
