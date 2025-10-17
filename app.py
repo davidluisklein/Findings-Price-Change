@@ -36,6 +36,15 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
+def clean_special_characters(df):
+    """Remove special characters ‚ ƒ Ã Â from all string columns in DataFrame"""
+    chars_to_remove = '[‚ƒÃÂ]'
+    
+    for col in df.select_dtypes(include=['object']).columns:
+        df[col] = df[col].astype(str).str.replace(chars_to_remove, '', regex=True)
+    
+    return df
+
 def gold_table(gold_market: float) -> pd.DataFrame:
     """Generate gold multiplier table"""
     multipliers = [1.7, 1.5, 1.35, 1.25, 1.175, 1.1, 1.0683, 1]
@@ -134,6 +143,10 @@ def process_precious_metals_data(reference_file, upload_file, gold_price, silver
         
         # Read upload file  
         upload = pd.read_csv(upload_file, encoding='latin1')
+        
+        # Clean special characters from both dataframes
+        reference = clean_special_characters(reference)
+        upload = clean_special_characters(upload)
         
         # Process reference data (following your Colab logic)
         reference["Date Created"] = pd.to_datetime(reference["Date Created"], errors="coerce")
@@ -355,6 +368,7 @@ with st.sidebar:
     - Files must be in CSV format
     
     ### Processing Logic:
+    - Automatically removes special characters (‚ ƒ Ã Â)
     - Creates multiplier tables based on current market prices
     - Matches products by SKU/Stock ID
     - Updates prices using metal type (Gold/Silver) multipliers
@@ -367,6 +381,7 @@ with st.sidebar:
     - Remove any special characters from filenames
     - Check that Stock IDs match between files
     - Verify gold and silver prices before processing
+    - Special encoding characters will be automatically removed
     """)
 
 if __name__ == "__main__":
