@@ -38,8 +38,8 @@ st.markdown("""
 
 def gold_table(gold_market: float) -> pd.DataFrame:
     """Generate gold multiplier table"""
-    multipliers = [1.7, 1.5, 1.35, 1.25, 1.175, 1.1, 1.0683, 1]
-    factors = [1.8, 1.6, 1.4, 1.3, 1.2, 1.1, 1.05, 1]
+    multipliers = [2.1, 1.7, 1.5, 1.35, 1.25, 1.175, 1.1, 1.0683, 1]
+    factors = [2, 1.8, 1.6, 1.4, 1.3, 1.2, 1.1, 1.05, 1]
     results = [gold_market / m for m in multipliers]
     return pd.DataFrame({"Gold Market": results, "Multiplier": factors})
 
