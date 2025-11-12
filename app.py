@@ -138,16 +138,16 @@ def process_precious_metals_data(reference_file, upload_file, gold_price, silver
         # Process reference data (following your Colab logic)
         reference["Date Created"] = pd.to_datetime(reference["Date Created"], errors="coerce")
         reference["Date Last Price Change"] = pd.to_datetime(reference["Date Last Price Change"], errors="coerce")
-        reference["Date Last Stocked"] = pd.to_datetime(reference["Date Last Stocked"], errors="coerce")
+        reference["Last Stocked"] = pd.to_datetime(reference["Last Stocked"], errors="coerce")
         
         reference["Max Date"] = reference[
-            ["Date Created", "Date Last Price Change", "Date Last Stocked"]
+            ["Date Created", "Date Last Price Change", "Last Stocked"]
         ].max(axis=1)
         
         reference = reference.sort_values(by="Max Date", ascending=False).reset_index(drop=True)
         
         # Remove specific columns
-        columns_to_drop = ["Date Created", "Date Last Price Change", "Date Last Stocked", 
+        columns_to_drop = ["Date Created", "Date Last Price Change", "Last Stocked", 
                           "Bar Code ID", "Department", "Description", "Qty On Hand", 
                           "Type", "Vendor Name", "UID", "Vendor UID", "Photo"]
         
