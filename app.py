@@ -73,6 +73,8 @@ def lookup_multiplier(reference, gold_factor, silver_factor):
         
         if metal_type == 'S/S':  # Silver
             return find_multiplier_above(market_value, silver_factor_sorted)
+        elif metal_type == 'PLATINUM':
+            pass
         else:  # Gold or any other metal
             return find_multiplier_above(market_value, gold_factor_sorted)
     
