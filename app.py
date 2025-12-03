@@ -50,10 +50,19 @@ def silver_table(silver_market: float) -> pd.DataFrame:
     results_s = [silver_market / m for m in multipliers_s]
     return pd.DataFrame({"Gold Market": results_s, "Multiplier": factors_s})
 
-def lookup_multiplier(reference, gold_factor, silver_factor):
+def platinum_table(platinum_market: float) -> pd.DataFrame:
+    """Generate platinum multiplier table"""
+    multipliers_p = [2.2, 1.5573, 1.4615, 1.3571, 1.3073, 1.2025, 1.1176, 1.0555, 1]
+    factors_p = [2, 1.6, 1.5, 1.4, 1.3, 1.2, 1.1, 1.05, 1]
+    results_p = [platinum_market / m for m in multipliers_p]
+    return pd.DataFrame({"Gold Market": results_p, "Multiplier": factors_p})
+
+
+def lookup_multiplier(reference, gold_factor, silver_factor, platinum_factor):
     """Lookup multiplier from appropriate factor table based on Metal type"""
     gold_factor_sorted = gold_factor.sort_values('Gold Market').reset_index(drop=True)
     silver_factor_sorted = silver_factor.sort_values('Gold Market').reset_index(drop=True)
+    platinum_factor_sorted = platinum_factor.sort_values('Gold Market').reset_index(drop=True)
     
     def find_multiplier_above(value, factor_df, market_col='Gold Market'):
         if pd.isna(value):
@@ -74,7 +83,7 @@ def lookup_multiplier(reference, gold_factor, silver_factor):
         if metal_type == 'S/S':  # Silver
             return find_multiplier_above(market_value, silver_factor_sorted)
         elif metal_type == 'PLATINUM':
-            pass
+            return find_multiplier_above(market_value, platinum_factor_sorted)
         else:  # Gold or any other metal
             return find_multiplier_above(market_value, gold_factor_sorted)
     
@@ -127,7 +136,7 @@ def update_variant_price_fixed(upload, reference):
     
     return result, successful_updates, skipped_blank_sku, skipped_no_match
 
-def process_precious_metals_data(reference_file, upload_file, gold_price, silver_price):
+def process_precious_metals_data(reference_file, upload_file, gold_price, silver_price, platinum_price):
     """Main processing function implementing your exact Colab logic"""
     
     try:
@@ -183,9 +192,10 @@ def process_precious_metals_data(reference_file, upload_file, gold_price, silver
         # Generate multiplier tables using current market prices
         gold_factor = gold_table(gold_price)
         silver_factor = silver_table(silver_price)
+        platinum_factor = platinum_table(platinum_price)
         
         # Lookup and assign multipliers
-        reference = lookup_multiplier(reference, gold_factor, silver_factor)
+        reference = lookup_multiplier(reference, gold_factor, silver_factor, platinum_factor)
         
         # Create new price column - ensure both columns are numeric
         reference['Multiplier'] = pd.to_numeric(reference['Multiplier'], errors='coerce').fillna(1.0)
@@ -273,7 +283,7 @@ def main():
     
     # Market prices section
     st.subheader("💰 Current Market Prices")
-    col3, col4 = st.columns(2)
+    col3, col4, col5 = st.columns(3)
     
     with col3:
         gold_price = st.number_input(
@@ -293,17 +303,26 @@ def main():
             format="%.2f"
         )
     
+    with col5:
+        platinum_price = st.number_input(
+            "⬜ Platinum Price (per oz)",
+            min_value=0.0,
+            value=1000.0,
+            step=0.01,
+            format="%.2f"
+        )
+    
     # Process button
     if st.button("🚀 Process Documents", type="primary", use_container_width=True):
         if reference_file is None or upload_file is None:
             st.error("Please upload both files before processing.")
-        elif gold_price <= 0 or silver_price <= 0:
-            st.error("Please enter valid gold and silver prices.")
+        elif gold_price <= 0 or silver_price <= 0 or platinum_price <= 0:
+            st.error("Please enter valid gold, silver, and platinum prices.")
         else:
             with st.spinner("Processing your documents..."):
                 # Process the data
                 result_df, stats = process_precious_metals_data(
-                    reference_file, upload_file, gold_price, silver_price
+                    reference_file, upload_file, gold_price, silver_price, platinum_price
                 )
                 
                 if result_df is not None and stats is not None:
@@ -312,15 +331,15 @@ def main():
                     
                     # Show statistics
                     st.subheader("📊 Processing Statistics")
-                    col5, col6, col7, col8 = st.columns(4)
+                    stat_col1, stat_col2, stat_col3, stat_col4 = st.columns(4)
                     
-                    with col5:
+                    with stat_col1:
                         st.metric("Total Rows", stats['total_rows'])
-                    with col6:
+                    with stat_col2:
                         st.metric("Successfully Updated", stats['successful_updates'])
-                    with col7:
+                    with stat_col3:
                         st.metric("Blank SKUs", stats['skipped_blank_sku'])
-                    with col8:
+                    with stat_col4:
                         st.metric("No Match Found", stats['skipped_no_match'])
                     
                     # Show preview of results
@@ -363,7 +382,7 @@ with st.sidebar:
     ### How to use:
     1. **Upload Reference Data**: Your pricing reference CSV file
     2. **Upload Product Export**: Your product export CSV file
-    3. **Enter Market Prices**: Current gold and silver prices per ounce
+    3. **Enter Market Prices**: Current gold, silver, and platinum prices per ounce
     4. **Process**: Click the process button
     5. **Download**: Get your updated file with new prices
     
@@ -372,10 +391,15 @@ with st.sidebar:
     - **Product file** should contain: Variant SKU, Variant Price
     - Files must be in CSV format
     
+    ### Metal Types Supported:
+    - **Gold**: Uses gold multiplier table
+    - **S/S (Silver)**: Uses silver multiplier table
+    - **PLATINUM**: Uses platinum multiplier table
+    
     ### Processing Logic:
     - Creates multiplier tables based on current market prices
     - Matches products by SKU/Stock ID
-    - Updates prices using metal type (Gold/Silver) multipliers
+    - Updates prices using metal type (Gold/Silver/Platinum) multipliers
     - Rounds all prices to 2 decimal places
     - Removes special encoding characters from final output
     """)
@@ -385,7 +409,7 @@ with st.sidebar:
     - Make sure your CSV files use UTF-8 encoding
     - Remove any special characters from filenames
     - Check that Stock IDs match between files
-    - Verify gold and silver prices before processing
+    - Verify gold, silver, and platinum prices before processing
     """)
 
 if __name__ == "__main__":
