@@ -37,8 +37,8 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # Column name aliases — add more variants here if needed
-SKU_ALIASES = ['Variant SKU', 'Model']
-PRICE_ALIASES = ['Variant Price', 'Price']
+SKU_ALIASES = ['Variant SKU', 'model']
+PRICE_ALIASES = ['Variant Price', 'price']
 
 def detect_column(df, aliases):
     """Return the first alias found in df.columns, or None."""
@@ -352,7 +352,7 @@ with st.sidebar:
 
     ### File Requirements:
     - **Reference file** should contain: Stock ID, Metal, Price Per Unit, Gold Market
-    - **Product file** should contain a SKU column (`Variant SKU` or `Model`) and a price column (`Variant Price` or `Price`)
+    - **Product file** should contain a SKU column (`Variant SKU` or `model`) and a price column (`Variant Price` or `Price`)
     - Files must be in CSV format
 
     ### Metal Types Supported:
@@ -374,7 +374,7 @@ with st.sidebar:
     - Remove any special characters from filenames
     - Check that Stock IDs match between files
     - Verify gold, silver, and platinum prices before processing
-    - Accepted SKU column names: `Variant SKU`, `Model`
+    - Accepted SKU column names: `Variant SKU`, `model`
     - Accepted Price column names: `Variant Price`, `Price`
     """)
 
